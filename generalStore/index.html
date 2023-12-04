@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List</title>
+</head>
+<body>
+    <form id="yourFormId" onsubmit="addItems(event)">
+        <label for="itemName">Name of the task:</label>
+        <input type="text" id="item" name="itemName">
+        <label for="Description">Item Description:</label>
+        <input type="text" id="itemDesc" name="Description">
+        <label for="itemPrice">Item Price:</label>
+        <input type="number" id="price" name="itemPrice">
+        <label for="quantity">Item Quantity:</label>
+        <input type="number" id="quant" name="quantity">
+        <button type="submit">Add Item</button>
+    </form>
+    <div>
+        <ul id="itemList"></ul>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script>
+        let itemList = document.getElementById("itemList");
+
+        function addItems(e) {
+            e.preventDefault();
+
+            let item = e.target.itemName.value;
+            let desc = e.target.Description.value;
+            let price = e.target.itemPrice.value;
+            let quant = e.target.quantity.value;
+
+            let myItem = {
+                item: item,
+                desc: desc,
+                price: price,
+                quant: quant
+            };
+
+            axios.post('https://crudcrud.com/api/045006fbef344acfb4612b1b78999371/itemlist', myItem)
+                .then(response => {
+
+                    console.log("Item added successfully");
+                    fetchItems();
+                })
+                .catch(error => {
+                    // Handle errors if any
+                    console.error("Error adding item: ", error);
+                });
+        }
+
+        function fetchItems() {
+            axios.get('https://crudcrud.com/api/045006fbef344acfb4612b1b78999371/itemlist')
+                .then(response => {
+                    itemList.innerHTML = ""; // Clear the current list
+                    response.data.forEach(item => {
+                        itemList.innerHTML += `<li>${item.item} - ${item.desc} - ${item.price} - Quantity: ${item.quant}
+                            <button onclick="decreaseQuantity('${item._id}', 1)">Buy One</button>
+                            <button onclick="decreaseQuantity('${item._id}', 2)">Buy Two</button>
+                            <button onclick="decreaseQuantity('${item._id}', 3)">Buy Three</button>
+                        </li>`;
+                    });
+                })
+                .catch(error => {
+                    console.error("Error fetching items: ", error);
+                });
+        }
+
+        function decreaseQuantity(itemId, amount) {
+            axios.get(`https://crudcrud.com/api/045006fbef344acfb4612b1b78999371/itemlist/${itemId}`)
+                .then(response => {
+                    let item = response.data;
+                    let updatedQuantity = item.quant - amount;
+                    if (updatedQuantity >= 0) {
+                        item.quant = updatedQuantity;
+                        axios.put(`https://crudcrud.com/api/045006fbef344acfb4612b1b78999371/itemlist/${itemId}`, item)
+                            .then(() => {
+                                // Handle success
+                                console.log(`Quantity decreased by ${amount}`);
+                                // Refresh the displayed items
+                                fetchItems();
+                            })
+                            .catch(error => {
+                                console.error("Error updating quantity: ", error);
+                            });
+                    } else {
+                        console.log("Cannot decrease quantity below 0");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching item: ", error);
+                });
+        }
+
+        // Fetch initial items on page load
+        fetchItems();
+    </script>
+</body>
+</html>
