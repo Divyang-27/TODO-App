@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List</title>
+</head>
+<body>
+    <form id="yourFormId">
+        <label for="todoName">Name of the task:</label>
+        <input type="text" id="todoName" name="Tasks">
+        <label for="taskDesc">Task Description:</label>
+        <input type="text" id="taskDesc" name="taskdescs">
+        <button type="submit">Add Task</button>
+    </form>
+    <div>
+        <ul id="taskList"></ul>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <script>
+        const tasksList = document.getElementById("taskList");
+
+        function fetchTasks() {
+            axios.get("https://crudcrud.com/api/d14c5290cd12407a9c92c1cf82af06a9/TodoList")
+                .then((response) => {
+                    const tasksData = response.data;
+                    tasksList.innerHTML = ''; // Clear existing tasks before displaying new ones
+                    tasksData.forEach((task) => {
+                        displayTask(task);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error fetching tasks:", error);
+                });
+        }
+
+        function displayTask(myTask) {
+            let itemList = document.createElement("li");
+            let checkBtn = document.createElement("input");
+            let delBtn = document.createElement("button");
+
+            delBtn.innerHTML = "Delete Task";
+            checkBtn.setAttribute("type", "checkbox");
+            itemList.innerHTML = `Todo: ${myTask.todo}  Desc:${myTask.desc} `;
+            itemList.appendChild(checkBtn);
+            itemList.appendChild(delBtn);
+            tasksList.appendChild(itemList);
+
+            delBtn.addEventListener("click", () => {
+                deleteTask(myTask._id, itemList);
+            });
+
+            axios.get(`https://crudcrud.com/api/d14c5290cd12407a9c92c1cf82af06a9/TodoList/${myTask._id}`)
+                .then((response) => {
+                    const taskData = response.data;
+                    checkBtn.checked = taskData.done;
+                })
+                .catch((error) => {
+                    console.error("Error fetching task status:", error);
+                });
+        }
+        function deleteTask(taskId, listItem) {
+            axios.delete(`https://crudcrud.com/api/d14c5290cd12407a9c92c1cf82af06a9/TodoList/${taskId}`)
+                .then(() => {
+                    listItem.remove();
+                })
+                .catch((error) => {
+                    console.error("Error deleting task:", error);
+                });
+        }
+
+        function addTask(e) {
+            e.preventDefault();
+            let todoname = e.target.Tasks.value;
+            let description = e.target.taskdescs.value;
+            let myTask = {
+                todo: todoname,
+                desc: description,
+                done: false,
+            };
+
+            axios.post("https://crudcrud.com/api/d14c5290cd12407a9c92c1cf82af06a9/TodoList", myTask)
+                .then(() => {
+                    fetchTasks();
+                })
+                .catch((error) => {
+                    console.error("Error adding task:", error);
+                });
+        }
+        document.getElementById("yourFormId").addEventListener("submit", addTask);
+
+        window.addEventListener('load', () => {
+            fetchTasks();
+        });
+    </script>
+</body>
+</html>
